@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -24,9 +25,11 @@ func main() {
 // Run lists keys. host should be an IP:port pair
 func Run(ctx context.Context, host string) ([]string, error) {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     host,
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Addr:        host,
+		Password:    "", // no password set
+		DB:          0,  // use default DB
+		DialTimeout: time.Second * 5,
+		ReadTimeout: time.Second * 5,
 	})
 
 	keys := rdb.Keys(ctx, "*")
