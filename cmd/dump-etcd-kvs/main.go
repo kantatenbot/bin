@@ -20,8 +20,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	b, _ := json.Marshal(kvs)
-	os.Stdout.Write(b)
+	// oom when marshalling all at once in some cases
+	encoder := json.NewEncoder(os.Stdout)
+	for _, kv := range kvs {
+		encoder.Encode(kv)
+		os.Stdout.Write([]byte("\n"))
+	}
 }
 
 // Run lists keys. host should be an IP:port pair
@@ -45,10 +49,10 @@ func Run(host string) ([]*mvccpb.KeyValue, error) {
 	defer cancel()
 	_, err = client.Status(ctx, host)
 	if err != nil {
-		return nil, fmt.Errorf("unabled to get status (host is probably down. the client lib doesnt surface network errors), %s", err.Error())
+		return nil, fmt.Errorf("unable to get status (host might be down), %s", err.Error())
 	}
 
-	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	resp, err := client.KV.Get(ctx, "", clientv3.WithFromKey())
 	// https://github.com/etcd-io/etcd/blob/58fb625d1226d7dc47f4fe0355ac5b169e7d3ef6/client/v3/op.go#L411-L419
